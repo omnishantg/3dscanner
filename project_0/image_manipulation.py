@@ -8,7 +8,6 @@ your implementation, adding functions as needed until all
 unit tests pass.
 """
 import cv2
-import numpy as np
 
 
 def flip_image(img, horizontal, vertical):
