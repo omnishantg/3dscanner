@@ -23,15 +23,26 @@ def flip_image(image, horizontal, vertical):
         flip = cv2.flip(image, horizontal, vertical)
     return flip
 
+
 def negate_image(image):
     negate = 255 - image
     return negate
+
 
 def swap_blue_and_green(image):
     b, g, r = cv2.split(image)
     x = b
     b = g
     g = x
+    img = cv2.merge((b, g, r))
+    return img
+
+
+def swap_blue_and_red(image):
+    b, g, r = cv2.split(image)
+    x = g
+    g = b
+    r = x
     img = cv2.merge((b, g, r))
     return img
 
@@ -47,5 +58,9 @@ if __name__ == '__main__':
     cv2.destroyAllWindows()
     image4 = swap_blue_and_green(image)
     cv2.imshow("cat", image4)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    image5 = swap_blue_and_red(image)
+    cv2.imshow("cat", image5)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
