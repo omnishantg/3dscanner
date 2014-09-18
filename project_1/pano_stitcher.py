@@ -44,7 +44,7 @@ def homography(image_a, image_b, bff_match=False):
     # #number of matches
     # kp_pairs = zip(mkp_a, mkp_b)
     # print len(kp_pairs)
-    
+
     # convert good matches into points
     img_a = np.float32([kp.pt for kp in mkp_a])
     img_b = np.float32([kp.pt for kp in mkp_b])
@@ -53,30 +53,7 @@ def homography(image_a, image_b, bff_match=False):
     M, status = cv2.findHomography(img_b, img_a, cv2.RANSAC,5.0)
     # print '%d / %d  inliers/matched' % (np.sum(status), len(status))
     return M
-
-    # FLANN_INDEX_KDTREE = 0
-    # index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
-    # search_params = dict(checks = 50)
-
-    # flann = cv2.FlannBasedMatcher(index_params, search_params)
-    # matches = flann.knnMatch(des1,des2,k=2)
-
-    # good = []
-    # for m,n in matches:
-    #     if m.distance < 0.7*n.distance:
-    #         good.append(m)
-
-    # print len(good)        
-
-    # if len(good)>10:
-    #     src_pts = np.float32([ kp1[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
-    #     dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
-
-    #     M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
-    #     matchesMask = mask.ravel().tolist()
-    #     print '%d / %d  inliers/matched' % (np.sum(mask), len(mask))
-
-    # return M
+    
 
 def warp_image(image, homography):
     """Warps 'image' by 'homography'
