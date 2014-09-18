@@ -8,7 +8,7 @@ TODO: Implement!
 """
 
 import cv2
-import numpy
+import numpy as np
 
 
 def homography(image_a, image_b, bff_match=False):
@@ -22,35 +22,61 @@ def homography(image_a, image_b, bff_match=False):
              mapping points in image_b to corresponding points in image_a.
     """
     #initiate SIFT detector
-    orb = cv2.ORB()
+    sift = cv2.SIFT()
 
     #find the keypoints and descriptors with SIFT
-    kp1, des1 = orb.detectAndCompute(image_a, None)
-    kp2, des2 = orb.detectAndCompute(image_b, None)
+    kp_a, des_a = sift.detectAndCompute(image_a, None)
+    kp_b, des_b = sift.detectAndCompute(image_b, None)
 
-    #create BFMatcher object and find matches
-    bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck = True)
-    matches = bf.match(des1,des2)
+    #create matches
+    matcher = cv2.BFMatcher()
+    raw_matches = matcher.knnMatch(des_a, trainDescriptors = des_b, k=2)
 
-    #sort through matches to find good matches based on Lowe's ration test
-    good = []
-    for m,n in matches:
-      if m.distance < 0.7 * n.distance:
-        good.append(m)
+    #filter matches with ratio test
+    ratio = .75
+    mkp_a, mkp_b = [], []
+    for m in raw_matches:
+        if len(m) == 2 and (m[0].distance < (m[1].distance * ratio)):
+            m = m[0]
+            mkp_a.append( kp_a[m.queryIdx] )
+            mkp_b.append( kp_b[m.trainIdx] )
+
+    # #number of matches
+    # kp_pairs = zip(mkp_a, mkp_b)
+    # print len(kp_pairs)
     
-    if len(good) > 10:
-      src_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1,1,2)
-      dst_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1,1,2)
-
-    else: 
-        matchesMask = None
+    # convert good matches into points
+    img_a = np.float32([kp.pt for kp in mkp_a])
+    img_b = np.float32([kp.pt for kp in mkp_b])
 
     #find homography matrix
-    M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+    M, status = cv2.findHomography(img_b, img_a, cv2.RANSAC,5.0)
+    # print '%d / %d  inliers/matched' % (np.sum(status), len(status))
     return M
 
-    pass
+    # FLANN_INDEX_KDTREE = 0
+    # index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+    # search_params = dict(checks = 50)
 
+    # flann = cv2.FlannBasedMatcher(index_params, search_params)
+    # matches = flann.knnMatch(des1,des2,k=2)
+
+    # good = []
+    # for m,n in matches:
+    #     if m.distance < 0.7*n.distance:
+    #         good.append(m)
+
+    # print len(good)        
+
+    # if len(good)>10:
+    #     src_pts = np.float32([ kp1[m.queryIdx].pt for m in good ]).reshape(-1,1,2)
+    #     dst_pts = np.float32([ kp2[m.trainIdx].pt for m in good ]).reshape(-1,1,2)
+
+    #     M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC,5.0)
+    #     matchesMask = mask.ravel().tolist()
+    #     print '%d / %d  inliers/matched' % (np.sum(mask), len(mask))
+
+    # return M
 
 def warp_image(image, homography):
     """Warps 'image' by 'homography'
@@ -86,3 +112,9 @@ def create_mosaic(images, origins):
              alpha channel set to zero.
     """
     pass
+
+if __name__ == '__main__':
+  img1 = cv2.imread("test_data/books_1.png")
+  img2 = cv2.imread("test_data/books_2.png")
+  M = homography(img1, img2)
+  
