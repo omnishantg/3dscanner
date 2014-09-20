@@ -73,9 +73,12 @@ def warp_image(image, homography):
         corner in the target space of 'homography', which accounts for any
         offset translation component of the homography.
     """
-    size = 1000,2000
-    warp = cv2.warpPerspective(image, homography,size)
-    return warp
+    rows, cols = image.shape[:2]
+    #create alpha channel in image
+    cv2.cvtColor(image, cv2.COLOR_BGR2BGRA)
+    
+    # warp = cv2.warpPerspective(image,homography, (cols, rows))
+    # return warp
 
 
 def create_mosaic(images, origins):
