@@ -90,10 +90,10 @@ def warp_image(image, homography):
     length = np.amax(div1) - np.amin(div1)
     height = np.amax(div2) - np.amin(div2)    
 
-    if (minlength < 0):
-        homography[0][2] = homography[0][2] - minlength
-    if (minheight < 0):
-        homography[1][2] = homography[1][2] - minheight
+    # if (minlength < 0):
+    homography[0][2] = homography[0][2] - minlength
+    # if (minheight < 0):
+    homography[1][2] = homography[1][2] - minheight
     warp = cv2.warpPerspective(img, homography, (int(length), int(height)))
     return warp, topleft
 
@@ -142,9 +142,9 @@ def create_mosaic(images, origins):
     return result
 
 if __name__ == '__main__':
-  img1 = cv2.imread("my_panos/photo1.JPG")
-  img2 = cv2.imread("my_panos/photo2.JPG")
-  img3 = cv2.imread("my_panos/photo3.JPG")
+  img1 = cv2.imread("my_panos/img1.jpg")
+  img2 = cv2.imread("my_panos/img2.jpg")
+  img3 = cv2.imread("my_panos/img3.jpg")
   M = homography(img2, img1)
   img4, topleft = warp_image(img1, M)
   cv2.imwrite("my_panos/img4.png", img4)
