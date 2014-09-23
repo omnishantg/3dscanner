@@ -73,15 +73,33 @@ def warp_image(image, homography):
         corner in the target space of 'homography', which accounts for any
         offset translation component of the homography.
     """
-    rows, cols, depth = image.shape
-    box = np.matrix([[0, 0, cols-1, cols-1], [0, rows-1, 0, rows-1], [1, 1, 1, 1]])
+    topleft = (0,0)
+    img = cv2.cvtColor(image, cv2.COLOR_BGR2BGRA)
+    rows, cols, depth = img.shape
+    box = np.matrix([[0, 0, cols, cols], [0, rows, 0, rows], [1, 1, 1, 1]])
     res = np.dot(homography, box)
-    length = np.amax(res[0]) - np.amin(res[0])
-    height = np.amax(res[1]) - np.amin(res[1])
+    
+
     #create alpha channel in image
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2BGRA)
-    warp = cv2.warpPerspective(image,homography, (int(length), int(height)))
-    return warp
+    
+    div1 = np.divide(res[0],res[2])
+    div2 = np.divide(res[1],res[2])
+    topleft = (int(np.amin(div1)), int(np.amin(div2)))
+
+    minlength = np.amin(div1)
+    minheight = np.amin(div2)
+    
+    length = np.amax(div1) - np.amin(div1)
+    height = np.amax(div2) - np.amin(div2)    
+
+    if (minlength < 0):
+        homography[0][2] = homography[0][2] - minlength
+    if (minheight < 0):
+        homography[1][2] = homography[1][2] - minheight
+    warp = cv2.warpPerspective(img, homography, (int(length), int(height)))
+
+
+    return warp, topleft
 
 
 def create_mosaic(images, origins):
@@ -101,8 +119,8 @@ def create_mosaic(images, origins):
 if __name__ == '__main__':
   img1 = cv2.imread("test_data/books_1.png")
   img2 = cv2.imread("test_data/books_2.png")
-  M = homography(img1, img2)
-  img = warp_image(img1, M)
+  M = homography(img2, img1)
+  img, topleft = warp_image(img1, M)
   cv2.imshow("cat",img)
   cv2.waitKey(0)
   
