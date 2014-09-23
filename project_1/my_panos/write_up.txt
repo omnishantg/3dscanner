@@ -1,0 +1,1 @@
+Our pano_stitcher.py has a main method that stitches together three images of the UT tower at night. You only need to type "python pano_stitcher.py" and it will create the panorama and label it as image7.png
