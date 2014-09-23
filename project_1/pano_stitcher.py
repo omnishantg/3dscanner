@@ -74,14 +74,12 @@ def warp_image(image, homography):
         offset translation component of the homography.
     """
     topleft = (0,0)
-    img = cv2.cvtColor(image, cv2.COLOR_BGR2BGRA)
-    rows, cols, depth = img.shape
-    box = np.matrix([[0, 0, cols, cols], [0, rows, 0, rows], [1, 1, 1, 1]])
-    res = np.dot(homography, box)
-    
-
     #create alpha channel in image
-    
+    img = cv2.cvtColor(image, cv2.COLOR_BGR2BGRA)
+    height, width, depth = img.shape
+    box = np.matrix([[0, 0, width, width], [0, height, 0, height], [1, 1, 1, 1]])
+    res = np.dot(homography, box)
+
     div1 = np.divide(res[0],res[2])
     div2 = np.divide(res[1],res[2])
     topleft = (int(np.amin(div1)), int(np.amin(div2)))
@@ -97,8 +95,6 @@ def warp_image(image, homography):
     if (minheight < 0):
         homography[1][2] = homography[1][2] - minheight
     warp = cv2.warpPerspective(img, homography, (int(length), int(height)))
-
-
     return warp, topleft
 
 
@@ -114,14 +110,70 @@ def create_mosaic(images, origins):
              in the mosaic not covered by any input image should have their
              alpha channel set to zero.
     """
-    pass
+    #shows images in order of dominance
+    x = []
+    y = []
+    #get minimum x and y
+    for i in origins:
+        x.append(i[0])
+        y.append(i[1])
+    x_min = np.amin(x)
+    y_min = np.amin(y)
+    x = []
+    y = []
+    #get largest x and y
+    for i in range(len(origins)):
+        x.append(origins[i][0] + images[i].shape[1])
+        y.append(origins[i][1] + images[i].shape[0])
+    #calculate width by subtracting top right x from top left x
+    width = np.amax(x) - x_min
+    #calculate height by subtracting bottom left y from top left y
+    height = np.amax(y) - y_min
+    result = np.zeros((height,width, 4))
+    for i in range(len(origins)):
+      rows = images[i].shape[0]
+      cols = images[i].shape[1]
+      print rows
+      print cols
+      img = images[i]
+      x_orig = origins[i][0]
+      y_orig = origins[i][1]
+      print x_orig
+      print y_orig
+      for w in range(0, rows):
+        for z in range(0, cols):
+          result[(w+y_orig-y_min), z+x_orig-x_min] = img[w, z]
+    #  result = cv2.warpPerspective(images[i], homograph, (width, height))
+    return result
 
 if __name__ == '__main__':
-  img1 = cv2.imread("test_data/books_1.png")
-  img2 = cv2.imread("test_data/books_2.png")
+  img1 = cv2.imread("test_data/photo1.png")
+  img2 = cv2.imread("test_data/photo2.png")
+  img3 = cv2.imread("test_data/photo3.png")
+  print "asdf"
   M = homography(img2, img1)
-  img, topleft = warp_image(img1, M)
-  cv2.imshow("cat",img)
+  print M
+  img4, topleft = warp_image(img1, M)
+  cv2.imwrite("test_data/img4.png", img4)
+  M2 = homography(img2, img3)
+  print M2
+  img5, topleft2 = warp_image(img3, M2)
+  cv2.imwrite("test_data/img5.png", img5)
+  cv2.imwrite("test_data/img6.png", img2)
+  read_alpha = -1
+
+  # Read the component images.
+  img4_w = cv2.imread("test_data/img4.png", read_alpha)
+  img6 = cv2.imread("test_data/img6.png")
+  img6 = cv2.cvtColor(img6, cv2.COLOR_BGR2BGRA)
+  img5_w = cv2.imread("test_data/img5.png", read_alpha)
+
+  # Create the panorama mosaic.
+  images = (img4_w, img5_w, img6)
+  origins = (topleft,topleft2,(0,0))
+  img7 = create_mosaic(images, origins)
+
+  cv2.imwrite("test_data/img7.png", img7)
   cv2.waitKey(0)
   
   
