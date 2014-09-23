@@ -48,7 +48,7 @@ def swap_blue_and_red(image):
 
 if __name__ == '__main__':
     image = cv2.imread("test_data/nyc.jpg")
-    image2 = flip_image(image, 0, 0)
+    image2 = flip_image(image, 1, 0)
     cv2.imshow("cat", image2)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
