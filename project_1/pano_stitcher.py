@@ -21,18 +21,18 @@ def homography(image_a, image_b):
     Returns: the 3x3 perspective transformation matrix (aka homography)
              mapping points in image_b to corresponding points in image_a.
     """
-    #initiate SIFT detector
+    # initiate SIFT detector
     sift = cv2.SIFT()
 
-    #find the keypoints and descriptors with SIFT
+    # find the keypoints and descriptors with SIFT
     kp_a, des_a = sift.detectAndCompute(image_a, None)
     kp_b, des_b = sift.detectAndCompute(image_b, None)
 
-    #create matches
+    #  matches
     matcher = cv2.BFMatcher()
     raw_matches = matcher.knnMatch(des_a, trainDescriptors=des_b, k=2)
 
-    #filter matches with ratio test
+    # filter matches with ratio test
     ratio = .75
     mkp_a, mkp_b = [], []
     for m in raw_matches:
@@ -41,7 +41,7 @@ def homography(image_a, image_b):
             mkp_a.append(kp_a[m.queryIdx])
             mkp_b.append(kp_b[m.trainIdx])
 
-    # #number of matches
+    # number of matches
     # kp_pairs = zip(mkp_a, mkp_b)
     # print len(kp_pairs)
 
@@ -49,7 +49,7 @@ def homography(image_a, image_b):
     img_a = np.float32([kp.pt for kp in mkp_a])
     img_b = np.float32([kp.pt for kp in mkp_b])
 
-    #find homography matrix
+    # find homography matrix
     M, status = cv2.findHomography(img_b, img_a, cv2.RANSAC, 5.0)
     # print '%d / %d  inliers/matched' % (np.sum(status), len(status))
     return M
@@ -74,7 +74,7 @@ def warp_image(image, homography):
         offset translation component of the homography.
     """
     topleft = (0, 0)
-    #create alpha channel in image
+    # create alpha channel in image
     img = cv2.cvtColor(image, cv2.COLOR_BGR2BGRA)
     height, width, depth = img.shape
     a1 = [0, 0, width, width]
@@ -115,10 +115,10 @@ def create_mosaic(images, origins):
              in the mosaic not covered by any input image should have their
              alpha channel set to zero.
     """
-    #shows images in order of dominance
+    # shows images in order of dominance
     x = []
     y = []
-    #get minimum x and y
+    # get minimum x and y
     for i in origins:
         x.append(i[0])
         y.append(i[1])
@@ -126,13 +126,13 @@ def create_mosaic(images, origins):
     y_min = np.amin(y)
     x = []
     y = []
-    #get largest x and y
+    # get largest x and y
     for i in range(len(origins)):
         x.append(origins[i][0] + images[i].shape[1])
         y.append(origins[i][1] + images[i].shape[0])
-    #calculate width by subtracting top right x from top left x
+    # calculate width by subtracting top right x from top left x
     width = np.amax(x) - x_min
-    #calculate height by subtracting bottom left y from top left y
+    # calculate height by subtracting bottom left y from top left y
     height = np.amax(y) - y_min
     result = np.zeros((height, width, 4))
     for i in range(len(origins)):
@@ -148,23 +148,23 @@ def create_mosaic(images, origins):
     return result
 
 if __name__ == '__main__':
-  # Read initial images
+    # Read initial images
     img1 = cv2.imread("my_panos/photo1.JPG")
     img2 = cv2.imread("my_panos/photo2.JPG")
     img3 = cv2.imread("my_panos/photo3.JPG")
 
-  # Run homography to change img1 to match img2. Add alpha channel
+    # Run homography to change img1 to match img2. Add alpha channel
     M = homography(img2, img1)
     img1, topleft = warp_image(img1, M)
     cv2.imwrite("my_panos/test.png", img1)
-  # Run homography to change img3 to match img2. Add alpha channel
+    # Run homography to change img3 to match img2. Add alpha channel
     M2 = homography(img2, img3)
     img3, topleft2 = warp_image(img3, M2)
     cv2.imwrite("my_panos/test2.png", img3)
-  # Add alpha channel to img2
+    # Add alpha channel to img2
     img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2BGRA)
 
-  # Create the panorama mosaic.
+    # Create the panorama mosaic.
     images = (img1, img2, img3)
     origins = (topleft, (0, 0), topleft2)
     pano = create_mosaic(images, origins)
