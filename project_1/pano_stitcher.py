@@ -8,7 +8,7 @@ TODO: Implement!
 """
 
 import cv2
-import numpy
+import numpy as np
 
 
 def homography(image_a, image_b):
@@ -21,7 +21,38 @@ def homography(image_a, image_b):
     Returns: the 3x3 perspective transformation matrix (aka homography)
              mapping points in image_b to corresponding points in image_a.
     """
-    pass
+
+    sift = cv2.SIFT()
+    kp_a, des_a = sift.detectAndCompute(image_a, None)
+    kp_b, des_b = sift.detectAndCompute(image_b, None)
+
+    # FLANN parameters
+    FLANN_INDEX_KDTREE = 0
+    index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+    search_params = dict(checks=100)
+
+    flann = cv2.FlannBasedMatcher(index_params, search_params)
+
+    bf = cv2.BFMatcher()
+    matches = flann.knnMatch(des_a, des_b, k=2)
+
+    good = []
+
+    for m, n in matches:
+        if m.distance < 0.75 * n.distance:
+            good.append(m)
+
+    # print len(good)
+    dst_pts = np.float32([kp_a[m.queryIdx].pt for m in good])
+    src_pts = np.float32([kp_b[m.trainIdx].pt for m in good])
+
+    M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+
+    # cv2.imshow("a", image_a)
+    # cv2.imshow("b", image_b)
+    # cv2.waitKey(0)
+
+    return M
 
 
 def warp_image(image, homography):
@@ -42,7 +73,18 @@ def warp_image(image, homography):
         corner in the target space of 'homography', which accounts for any
         offset translation component of the homography.
     """
-    pass
+    origin = (int(homography[0][2]), int(homography[1][2]))
+
+    new_size = (int(homography[1][1] * image.shape[1]),
+                int(homography[0][0] * image.shape[0]))
+
+    homography[0][2] = 0
+    homography[1][2] = 0
+
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2BGRA)
+    warped = cv2.warpPerspective(image, homography, new_size)
+
+    return (warped, origin)
 
 
 def create_mosaic(images, origins):
@@ -57,4 +99,30 @@ def create_mosaic(images, origins):
              in the mosaic not covered by any input image should have their
              alpha channel set to zero.
     """
-    pass
+
+
+    top_left = (min(x for x, y in origins), min(y for x, y in origins))
+
+    new_origins = [(x-top_left[0], y-top_left[1]) for x, y in origins]
+
+    pano_width = 0
+    pano_height = 0
+
+    for i in range(len(images)):
+        image = images[i]
+        x, y = new_origins[i]
+        pano_width = max(pano_width, image.shape[1]+x)
+        pano_height = max(pano_height, image.shape[0]+y)
+
+    panorama = np.zeros((pano_height, pano_width, 4), np.uint8)
+
+    for i in range(len(images)):
+        image = images[i]
+
+        for y in range(image.shape[0]):
+            for x in range(image.shape[1]):
+                for n in range(len(image[y, x])):
+                    panorama[y + new_origins[i][1], x + new_origins[i][0]][n] = image[y, x][n]
+                    # panorama[y+new_origins[i][1], x+new_origins[i][0]] = image[y, x]
+
+    return panorama
