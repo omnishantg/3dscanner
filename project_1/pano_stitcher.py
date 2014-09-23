@@ -133,47 +133,39 @@ def create_mosaic(images, origins):
     for i in range(len(origins)):
       rows = images[i].shape[0]
       cols = images[i].shape[1]
-      print rows
-      print cols
       img = images[i]
       x_orig = origins[i][0]
       y_orig = origins[i][1]
-      print x_orig
-      print y_orig
       for w in range(0, rows):
         for z in range(0, cols):
           result[(w+y_orig-y_min), z+x_orig-x_min] = img[w, z]
-    #  result = cv2.warpPerspective(images[i], homograph, (width, height))
     return result
 
 if __name__ == '__main__':
-  img1 = cv2.imread("test_data/photo1.png")
-  img2 = cv2.imread("test_data/photo2.png")
-  img3 = cv2.imread("test_data/photo3.png")
-  print "asdf"
+  img1 = cv2.imread("my_panos/photo1.JPG")
+  img2 = cv2.imread("my_panos/photo2.JPG")
+  img3 = cv2.imread("my_panos/photo3.JPG")
   M = homography(img2, img1)
-  print M
   img4, topleft = warp_image(img1, M)
-  cv2.imwrite("test_data/img4.png", img4)
+  cv2.imwrite("my_panos/img4.png", img4)
   M2 = homography(img2, img3)
-  print M2
   img5, topleft2 = warp_image(img3, M2)
-  cv2.imwrite("test_data/img5.png", img5)
-  cv2.imwrite("test_data/img6.png", img2)
+  cv2.imwrite("my_panos/img5.png", img5)
+  cv2.imwrite("my_panos/img6.png", img2)
   read_alpha = -1
 
   # Read the component images.
-  img4_w = cv2.imread("test_data/img4.png", read_alpha)
-  img6 = cv2.imread("test_data/img6.png")
+  img4_w = cv2.imread("my_panos/img4.png", read_alpha)
+  img6 = cv2.imread("my_panos/img6.png")
   img6 = cv2.cvtColor(img6, cv2.COLOR_BGR2BGRA)
-  img5_w = cv2.imread("test_data/img5.png", read_alpha)
+  img5_w = cv2.imread("my_panos/img5.png", read_alpha)
 
   # Create the panorama mosaic.
   images = (img4_w, img5_w, img6)
   origins = (topleft,topleft2,(0,0))
   img7 = create_mosaic(images, origins)
 
-  cv2.imwrite("test_data/img7.png", img7)
+  cv2.imwrite("my_panos/img7.png", img7)
   cv2.waitKey(0)
   
   
