@@ -7,7 +7,9 @@ Use the unit tests is image_manipulation_test.py to guide
 your implementation, adding functions as needed until all
 unit tests pass.
 """
-
+import cv2
+import numpy
+import unittest
 # TODO: Implement!
 
 import cv2
@@ -63,4 +65,4 @@ if __name__ == '__main__':
     image5 = swap_blue_and_red(image)
     cv2.imshow("cat", image5)
     cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    cv2.destroyAllWindows()x
