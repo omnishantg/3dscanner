@@ -149,18 +149,21 @@ def create_mosaic(images, origins):
 
 if __name__ == '__main__':
     # Read initial images
-    img1 = cv2.imread("my_panos/photo1.JPG")
-    img2 = cv2.imread("my_panos/photo2.JPG")
-    img3 = cv2.imread("my_panos/photo3.JPG")
+    img1 = cv2.imread("my_panos/far_planar1.jpg")
+    img2 = cv2.imread("my_panos/far_planar2.jpg")
+    img3 = cv2.imread("my_panos/far_planar3.jpg")
 
     # Run homography to change img1 to match img2. Add alpha channel
     M = homography(img2, img1)
+    print M
     img1, topleft = warp_image(img1, M)
-    cv2.imwrite("my_panos/test.png", img1)
+    print toplet
+    cv2.imwrite("my_panos/planar1.png", img1)
     # Run homography to change img3 to match img2. Add alpha channel
     M2 = homography(img2, img3)
+    print M2
     img3, topleft2 = warp_image(img3, M2)
-    cv2.imwrite("my_panos/test2.png", img3)
+    cv2.imwrite("my_panos/planar2.png", img3)
     # Add alpha channel to img2
     img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2BGRA)
 
@@ -169,4 +172,4 @@ if __name__ == '__main__':
     origins = (topleft, (0, 0), topleft2)
     pano = create_mosaic(images, origins)
 
-    cv2.imwrite("my_panos/pano.png", pano)
+    cv2.imwrite("my_panos/planar_pano.png", pano)
