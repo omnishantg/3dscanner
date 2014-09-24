@@ -95,11 +95,11 @@ def warp_image(image, homography):
 
     homography[0][2] = homography[0][2] - minlength
     homography[1][2] = homography[1][2] - minheight
-    BT = cv2.BORDER_TRANSPARENT
+    # BT = cv2.BORDER_TRANSPARENT
     warp = cv2.warpPerspective(img, homography,
-                               (int(l), int(h)), borderMode=BT)
-    (cb, cg, cr, ca) = cv2.split(warp)
-    warp = cv2.merge([cb, cg, cr, ca])
+                               (int(l), int(h)))
+    # (cb, cg, cr, ca) = cv2.split(warp)
+    # warp = cv2.merge([cb, cg, cr, ca])
     return warp, topleft
 
 
@@ -149,27 +149,47 @@ def create_mosaic(images, origins):
 
 if __name__ == '__main__':
     # Read initial images
-    img1 = cv2.imread("my_panos/far_planar1.jpg")
-    img2 = cv2.imread("my_panos/far_planar2.jpg")
-    img3 = cv2.imread("my_panos/far_planar3.jpg")
+    img1 = cv2.imread("my_panos/photo1.JPG")
+    img2 = cv2.imread("my_panos/photo2.JPG")
+    img3 = cv2.imread("my_panos/photo3.JPG")
 
     # Run homography to change img1 to match img2. Add alpha channel
     M = homography(img2, img1)
-    print M
     img1, topleft = warp_image(img1, M)
-    print toplet
-    cv2.imwrite("my_panos/planar1.png", img1)
+    cv2.imwrite("my_panos/test.png", img1)
     # Run homography to change img3 to match img2. Add alpha channel
     M2 = homography(img2, img3)
-    print M2
     img3, topleft2 = warp_image(img3, M2)
-    cv2.imwrite("my_panos/planar2.png", img3)
+    cv2.imwrite("my_panos/test2.png", img3)
     # Add alpha channel to img2
     img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2BGRA)
 
     # Create the panorama mosaic.
     images = (img1, img2, img3)
     origins = (topleft, (0, 0), topleft2)
+    pano = create_mosaic(images, origins)
+
+    cv2.imwrite("my_panos/pano.png", pano)
+
+    # Read initial images for PLanar panorama
+    img4 = cv2.imread("my_panos/far_planar1.jpg")
+    img5 = cv2.imread("my_panos/far_planar2.jpg")
+    img6 = cv2.imread("my_panos/far_planar3.jpg")
+
+    # Run homography to change img1 to match img2. Add alpha channel
+    M_1 = homography(img5, img4)
+    img4, topleft_1 = warp_image(img4, M_1)
+    cv2.imwrite("my_panos/planar_test.png", img4)
+    # Run homography to change img3 to match img2. Add alpha channel
+    M_2 = homography(img5, img6)
+    img6, topleft_2 = warp_image(img6, M_2)
+    cv2.imwrite("my_panos/planar_test2.png", img6)
+    # Add alpha channel to img2
+    img2 = cv2.cvtColor(img5, cv2.COLOR_BGR2BGRA)
+
+    # Create the panorama mosaic.
+    images = (img4, img5, img6)
+    origins = (topleft_1,(0, 0),topleft_2)
     pano = create_mosaic(images, origins)
 
     cv2.imwrite("my_panos/planar_pano.png", pano)

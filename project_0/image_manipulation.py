@@ -12,46 +12,57 @@ import numpy
 import unittest
 # TODO: Implement!
 
+import cv2
+import numpy
 
-def flip_image(img, x, y):
-    rows = img.shape[0]
-    cols = img.shape[1]
-    copy = numpy.copy(img)
-    if (x):
-        if (y):
-            for w in range(0, rows):
-                for z in range(0, cols):
-                    copy[w, z] = img[rows-w-1, cols-z-1]
-            return copy
-        else:
-            for w in range(0, rows):
-                for z in range(0, cols):
-                    copy[w, z] = img[w, cols-z-1]
-            return copy
+
+def flip_image(image, horizontal, vertical):
+    if horizontal == 1 and vertical == 1:
+        flip = cv2.flip(image, -1)
+    elif horizontal == 0 and vertical == 0:
+        flip = image
     else:
-        if (y):
-            for w in range(0, rows):
-                for z in range(0, cols):
-                    copy[w, z] = img[rows-w-1, z]
-            return copy
+        flip = cv2.flip(image, horizontal, vertical)
+    return flip
+
+
+def negate_image(image):
+    negate = 255 - image
+    return negate
+
+
+def swap_blue_and_green(image):
+    b, g, r = cv2.split(image)
+    x = b
+    b = g
+    g = x
+    img = cv2.merge((b, g, r))
     return img
 
 
-def negate_image(img):
-    rows = img.shape[0]
-    cols = img.shape[1]
-    copy = numpy.copy(img)
-    for w in range(0, rows):
-        for z in range(0, cols):
-            copy[w, z] = [255, 255, 255] - img[w, z]
-    return copy
+def swap_blue_and_red(image):
+    b, g, r = cv2.split(image)
+    x = g
+    g = b
+    r = x
+    img = cv2.merge((b, g, r))
+    return img
 
-
-def swap_blue_and_green(img):
-    rows = img.shape[0]
-    cols = img.shape[1]
-    copy = numpy.copy(img)
-    for w in range(0, rows):
-        for z in range(0, cols):
-            copy[w, z] = [img[w, z][1], img[w, z][0], img[w, z][2]]
-    return copy
+if __name__ == '__main__':
+    image = cv2.imread("test_data/nyc.jpg")
+    image2 = flip_image(image, 1, 0)
+    cv2.imshow("cat", image2)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    image3 = negate_image(image)
+    cv2.imshow("cat", image3)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    image4 = swap_blue_and_green(image)
+    cv2.imshow("cat", image4)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+    image5 = swap_blue_and_red(image)
+    cv2.imshow("cat", image5)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()x
