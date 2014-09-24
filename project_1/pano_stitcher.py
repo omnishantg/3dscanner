@@ -95,9 +95,9 @@ def warp_image(image, homography):
 
     homography[0][2] = homography[0][2] - minlength
     homography[1][2] = homography[1][2] - minheight
-    # BT = cv2.BORDER_TRANSPARENT
+    BT = cv2.BORDER_TRANSPARENT
     warp = cv2.warpPerspective(img, homography,
-                               (int(l), int(h)))
+                               (int(l), int(h)), borderMode = BT)
     # (cb, cg, cr, ca) = cv2.split(warp)
     # warp = cv2.merge([cb, cg, cr, ca])
     return warp, topleft
