@@ -168,9 +168,8 @@ if __name__ == '__main__':
     images = (img1, img2, img3)
     origins = (topleft, (0, 0), topleft2)
     pano = create_mosaic(images, origins)
-
+    
     cv2.imwrite("my_panos/pano.png", pano)
-
 
     # Read initial images for PLanar panorama
     img4 = cv2.imread("my_panos/far_planar1.jpg")
