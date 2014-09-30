@@ -97,7 +97,7 @@ def warp_image(image, homography):
     homography[1][2] = homography[1][2] - minheight
     BT = cv2.BORDER_TRANSPARENT
     warp = cv2.warpPerspective(img, homography,
-                               (int(l), int(h)), borderMode = BT)
+                               (int(l), int(h)), borderMode=BT)
     # (cb, cg, cr, ca) = cv2.split(warp)
     # warp = cv2.merge([cb, cg, cr, ca])
     return warp, topleft
@@ -168,7 +168,6 @@ if __name__ == '__main__':
     images = (img1, img2, img3)
     origins = (topleft, (0, 0), topleft2)
     pano = create_mosaic(images, origins)
-    
     cv2.imwrite("my_panos/pano.png", pano)
 
     # Read initial images for PLanar panorama
@@ -189,7 +188,7 @@ if __name__ == '__main__':
 
     # Create the panorama mosaic.
     images = (img4, img5, img6)
-    origins = (topleft_1,(0, 0),topleft_2)
+    origins = (topleft_1, (0, 0), topleft_2)
     pano = create_mosaic(images, origins)
 
     cv2.imwrite("my_panos/planar_pano.png", pano)
