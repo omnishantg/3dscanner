@@ -139,8 +139,8 @@ def create_mosaic(images, origins):
     panorama = np.zeros((pano_height, pano_width, 4), np.uint8)
 
     for image, (origin_x, origin_y) in zip(images, new_origins):
-        end_x = origin_x + image.shape[0]
-        end_y = origin_y + image.shape[1]
-        panorama[origin_x:end_x, origin_y:end_y] = image
+        end_x = origin_x + image.shape[1]
+        end_y = origin_y + image.shape[0]
+        panorama[origin_y:end_y, origin_x:end_x] = image
 
     return panorama
