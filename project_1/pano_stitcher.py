@@ -3,8 +3,6 @@
 In this project, you'll stitch together images to form a panorama.
 
 A shell of starter functions that already have tests is listed below.
-
-TODO: Implement!
 """
 
 import cv2
@@ -22,25 +20,28 @@ def homography(image_a, image_b):
              mapping points in image_b to corresponding points in image_a.
     """
 
+    # Detect keypoints in both images using SIFT
     sift = cv2.SIFT()
     kp_a, des_a = sift.detectAndCompute(image_a, None)
     kp_b, des_b = sift.detectAndCompute(image_b, None)
 
     # FLANN parameters
     FLANN_INDEX_KDTREE = 0
-    index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
-    search_params = dict(checks=100)
+    NUM_TREES = 5
+    NUM_CHECKS = 100
 
+    # Find matches between keypoints using FLANN
+    index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=NUM_TREES)
+    search_params = dict(checks=NUM_CHECKS)
     flann = cv2.FlannBasedMatcher(index_params, search_params)
-
-    bf = cv2.BFMatcher()
     matches = flann.knnMatch(des_a, des_b, k=2)
 
-    good = []
+    RATIO = 0.75
+    good = [m for m, n in matches if m.distance < RATIO * n.distance]
 
-    for m, n in matches:
-        if m.distance < 0.75 * n.distance:
-            good.append(m)
+    # Return None if there are not enough matches betwen the two images
+    if len(good) < 3:
+        return None
 
     dst_pts = np.float32([kp_a[m.queryIdx].pt for m in good])
     src_pts = np.float32([kp_b[m.trainIdx].pt for m in good])
@@ -74,11 +75,14 @@ def warp_image(image, homography):
     top_right = np.array([0, image.shape[1], 1])
     bottom_right = np.array([image.shape[0], image.shape[1], 1])
 
+    # Find the new origin from the scale parameters in the matrix
     origin = (int(homography[0][2]), int(homography[1][2]))
 
+    # Remove the scale parameters from the matrix transform
     homography[0][2] = 0
     homography[1][2] = 0
 
+    # Perform the homography on each of the corners to get the new image size
     top_left_warped = np.dot(homography, top_left)
     bottom_left_warped = np.dot(homography, bottom_left)
     top_right_warped = np.dot(homography, top_right)
@@ -89,6 +93,7 @@ def warp_image(image, homography):
     top_right = top_right_warped / top_right_warped[2]
     bottom_right = bottom_right_warped / bottom_right_warped[2]
 
+    # The new image size is the maximum of the x and y of our new bounds
     new_width = max(top_left[1], bottom_left[1], top_right[1], bottom_right[1])
     new_height = max(top_left[0], bottom_left[0], top_right[0],
                      bottom_right[0])
@@ -114,29 +119,28 @@ def create_mosaic(images, origins):
              alpha channel set to zero.
     """
 
-    top_left = (min(x for x, y in origins), min(y for x, y in origins))
+    # Find the top left most point on the panorama and set it equal to 0
+    origin_x, origin_y = zip(*origins)
+    min_x = min(origin_x)
+    min_y = min(origin_y)
 
-    new_origins = [(x-top_left[0], y-top_left[1]) for x, y in origins]
+    # Set other points relative to the new top left point
+    new_origins = [(x - min_x, y - min_y) for x, y in origins]
 
     pano_width = 0
     pano_height = 0
 
-    for i in range(len(images)):
-        image = images[i]
-        x, y = new_origins[i]
-        pano_width = max(pano_width, image.shape[1]+x)
-        pano_height = max(pano_height, image.shape[0]+y)
+    # Calculate the output panorama's dimensions
+    for image, (x, y) in zip(images, new_origins):
+        pano_width = max(pano_width, image.shape[1] + x)
+        pano_height = max(pano_height, image.shape[0] + y)
 
+    # Copy the image onto the panorama
     panorama = np.zeros((pano_height, pano_width, 4), np.uint8)
 
-    for i in range(len(images)):
-        image = images[i]
-
-        for y in range(image.shape[0]):
-            for x in range(image.shape[1]):
-                pano_y = y + new_origins[i][1]
-                pano_x = x + new_origins[i][0]
-
-                panorama[pano_y, pano_x] = image[y, x]
+    for image, (origin_x, origin_y) in zip(images, new_origins):
+        end_x = origin_x + image.shape[0]
+        end_y = origin_y + image.shape[1]
+        panorama[origin_x:end_x, origin_y:end_y] = image
 
     return panorama
