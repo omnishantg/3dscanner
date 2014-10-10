@@ -36,9 +36,11 @@ def rectify_pair(image_left, image_right, viz=False):
     flann = cv2.FlannBasedMatcher(index_params, search_params)
     matches = flann.knnMatch(des_left, des_right, k=2)
 
+    # Remove matches that are outside this threshold
     THRESHOLD = 0.75
     good = [m for m, n in matches if m.distance < THRESHOLD * n.distance]
 
+    # Make sure that there are at least 3 matching keypoints
     # Return None if there are not enough matches between the two images
     if len(good) < 3:
         return None
@@ -48,6 +50,7 @@ def rectify_pair(image_left, image_right, viz=False):
 
     F, status = cv2.findFundamentalMat(left_pts, right_pts)
 
+    # Resize the points into a matrix that stereo rectify will accept
     status = status.ravel()
     mp1 = left_pts[status].reshape(1, -1, 2)
     mp2 = right_pts[status].reshape(1, -1, 2)
@@ -70,7 +73,13 @@ def disparity_map(image_left, image_right):
       an single-channel image containing disparities in pixels,
         with respect to image_left's input pixels.
     """
-    pass
+
+    stereo = cv2.StereoBM()
+
+    image_left = cv2.cvtColor(image_left, cv2.CV_8UC1)
+    image_right = cv2.cvtColor(image_right, cv2.CV_8UC1)
+
+    return stereo.compute(image_left, image_right)
 
 
 def point_cloud(disparity_image, image_left, focal_length):
