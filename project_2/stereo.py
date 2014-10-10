@@ -74,12 +74,41 @@ def disparity_map(image_left, image_right):
         with respect to image_left's input pixels.
     """
 
+    # No parameters are best parameters
     stereo = cv2.StereoBM()
 
-    image_left = cv2.cvtColor(image_left, cv2.CV_8UC1)
-    image_right = cv2.cvtColor(image_right, cv2.CV_8UC1)
+    # Convert both images to 8-bit images
+    image_left = cv2.cvtColor(image_left, cv2.COLOR_BGR2GRAY)
+    image_right = cv2.cvtColor(image_right, cv2.COLOR_BGR2GRAY)
 
-    return stereo.compute(image_left, image_right)
+    # Calculate disparities and change resulting type to 8-bit
+    despair = stereo.compute(image_left, image_right)
+    despair /= 16
+    despair = despair.astype(np.uint8)
+
+    return despair
+
+
+ply_header = '''ply
+format ascii 1.0
+element vertex %(vert_num)d
+property float x
+property float y
+property float z
+property uchar red
+property uchar green
+property uchar blue
+end_header
+'''
+
+
+def write_ply(fn, verts, colors):
+    verts = verts.reshape(-1, 3)
+    colors = colors.reshape(-1, 3)
+    verts = np.hstack([verts, colors])
+    with open(fn, 'w') as f:
+        f.write(ply_header % dict(vert_num=len(verts)))
+        np.savetxt(f, verts, '%f %f %f %d %d %d')
 
 
 def point_cloud(disparity_image, image_left, focal_length):
@@ -95,4 +124,25 @@ def point_cloud(disparity_image, image_left, focal_length):
         pixels, with colors sampled from left_image. You may filter low-
         disparity pixels or noise pixels if you choose.
     """
-    pass
+
+    projection_matrix = np.matrix([[1, 0, 0, image_left.shape[1] * 0.5],
+                                   [0, 1, 0, image_left.shape[0] * 0.5],
+                                   [0, 0, focal_length, 0],
+                                   [0, 0, 0, 1]])
+
+    min_disp = 16
+    num_disp = 112 - min_disp
+
+    points = cv2.reprojectImageTo3D(disparity_image, projection_matrix)
+    colors = cv2.cvtColor(image_left, cv2.COLOR_BGR2RGB)
+    mask = disparity_image > disparity_image.min()
+    out_points = points[mask]
+    out_colors = colors[mask]
+    out_fn = 'out.ply'
+    write_ply('out.ply', out_points, out_colors)
+    print '%s saved' % 'out.ply'
+    cv2.imshow('left', image_left)
+    cv2.imshow('disparity', (disparity_image-min_disp)/num_disp)
+    cv2.waitKey()
+
+    return None
