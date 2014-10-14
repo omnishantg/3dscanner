@@ -101,8 +101,4 @@ class TestStereo(unittest.TestCase):
         self.assertGreater(len(ply_string), 0)
 
 if __name__ == '__main__':
-    # unittest.main()
-    suite = unittest.TestSuite()
-    suite.addTests(test_rectify_pair)
-
-    unittest.TextTestRunner().run(suite)
+    unittest.main()
