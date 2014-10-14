@@ -1,6 +1,15 @@
+<<<<<<< HEAD
 Our pano_stitcher.py has a main method that stitches together three images of the UT tower at night. You only need to type "python pano_stitcher.py" and it will create the panorama and label it as pano.png in my_panos
 
 
 We attempted the  Panorama of a planar scene. It warps the images wrong because it can't find the homography matrix. In our pano_stitcher.py, in our main method we create the mosaic out of photos we took from different positions. if you run "python pano_stitcher.py" it will create the panorama as planar_pano.png
 
 If you run "python pano_stitcher.py" it will generate both of those images. 
+=======
+Project 1
+#########
+
+Rohan Ramchand, Conner Collins, Max Timkovich
+
+To run our panorama program run `./mosaic image1 image2 image3` from this directory. The image will be output as panorama.png.
+>>>>>>> max/master

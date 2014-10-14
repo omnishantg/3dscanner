@@ -8,6 +8,7 @@ your implementation, adding functions as needed until all
 unit tests pass.
 """
 import cv2
+<<<<<<< HEAD
 import numpy
 import unittest
 # TODO: Implement!
@@ -66,3 +67,32 @@ if __name__ == '__main__':
     cv2.imshow("cat", image5)
     cv2.waitKey(0)
     cv2.destroyAllWindows()x
+=======
+
+
+def flip_image(img, horizontal, vertical):
+    flip_code = None
+
+    if horizontal and vertical:
+        flip_code = -1
+    elif horizontal:
+        flip_code = 1
+    elif vertical:
+        flip_code = 0
+
+    if flip_code is not None:
+        return cv2.flip(img, flip_code)
+    else:
+        return img
+
+
+def negate_image(img):
+    return cv2.bitwise_not(img)
+
+
+def swap_blue_and_green(img):
+    ch = cv2.split(img)
+    swapped = cv2.merge([ch[1], ch[0], ch[2]])
+
+    return swapped
+>>>>>>> max/master
