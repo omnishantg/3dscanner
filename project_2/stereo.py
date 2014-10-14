@@ -74,7 +74,6 @@ def disparity_map(image_left, image_right):
         with respect to image_left's input pixels.
     """
 
-    # No parameters are best parameters
     stereo = cv2.StereoBM()
 
     # Convert both images to 8-bit images
@@ -102,13 +101,21 @@ end_header
 '''
 
 
-def write_ply(fn, verts, colors):
+def make_ply(verts, colors):
     verts = verts.reshape(-1, 3)
     colors = colors.reshape(-1, 3)
     verts = np.hstack([verts, colors])
-    with open(fn, 'w') as f:
-        f.write(ply_header % dict(vert_num=len(verts)))
-        np.savetxt(f, verts, '%f %f %f %d %d %d')
+
+    output = ply_header % dict(vert_num=len(verts))
+
+    for vector in verts:
+        v_list = vector.tolist()
+        output += " ".join(map(str, v_list[:3]))
+        output += " "
+        output += " ".join(map(str, map(int, v_list[3:])))
+        output += "\n"
+
+    return output
 
 
 def point_cloud(disparity_image, image_left, focal_length):
@@ -138,11 +145,6 @@ def point_cloud(disparity_image, image_left, focal_length):
     mask = disparity_image > disparity_image.min()
     out_points = points[mask]
     out_colors = colors[mask]
-    out_fn = 'out.ply'
-    write_ply('out.ply', out_points, out_colors)
-    print '%s saved' % 'out.ply'
-    cv2.imshow('left', image_left)
-    cv2.imshow('disparity', (disparity_image-min_disp)/num_disp)
-    cv2.waitKey()
 
-    return None
+    ply = make_ply(out_points, out_colors)
+    return ply
