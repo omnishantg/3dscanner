@@ -4,8 +4,6 @@ In this project, you'll extract dense 3D information from stereo image pairs.
 """
 
 import cv2
-import cv2.cv as cv
-import math
 import numpy as np
 
 
