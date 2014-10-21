@@ -27,7 +27,7 @@ def rectify_pair(image_left, image_right, viz=False):
     # FLANN parameters
     FLANN_INDEX_KDTREE = 0
     NUM_TREES = 5
-    NUM_CHECKS = 100
+    NUM_CHECKS = 50
 
     # Find matches between keypoints using FLANN
     index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=NUM_TREES)
@@ -78,27 +78,34 @@ def disparity_map(image_left, image_right):
     image_left = cv2.cvtColor(image_left, cv2.COLOR_BGR2GRAY)
     image_right = cv2.cvtColor(image_right, cv2.COLOR_BGR2GRAY)
 
-    # Setup disparity calculator object
-    stereo = cv2.StereoSGBM()
-    stereo.SADWindowSize = 9
-    stereo.numberOfDisparities = 96
-    stereo.preFilterCap = 63
-    stereo.minDisparity = -21
-    stereo.uniquenessRatio = 7
-    stereo.speckleWindowSize = 0
-    stereo.speckleRange = 8
-    stereo.disp12MaxDiff = 1
-    stereo.fullDP = False
+    window_size = 1
+    stereo = cv2.StereoSGBM(
+            minDisparity=15,
+            numDisparities=112,
+            SADWindowSize=window_size,
+            uniquenessRatio=7,
+            speckleWindowSize=50,
+            speckleRange=1,
+            disp12MaxDiff=100,
+            fullDP=True,
+            P1=8 * 3 * window_size ** 2,
+            P2=32 * 3 * window_size ** 2
+    )
+
+    # Blur for better disparity map
+    image_left = cv2.GaussianBlur(image_left, (3, 3), 5)
+    image_right = cv2.GaussianBlur(image_right, (3, 3), 5)
 
     # Calculate disparities and change resulting type to 8-bit
-    despair = stereo.compute(image_left, image_right)
-    despair /= 16
-    despair = despair.astype(np.uint8)
+    disparity = stereo.compute(image_left, image_right)
+    disparity /= 16
+    disparity = disparity.astype(np.uint8)
 
-    return despair
+    return disparity
 
 
-ply_header = '''ply
+def make_ply(verts, colors):
+    ply_header = '''ply
 format ascii 1.0
 element vertex %(vert_num)d
 property float x
@@ -110,8 +117,6 @@ property uchar blue
 end_header
 '''
 
-
-def make_ply(verts, colors):
     # Reshape matrix
     verts = verts.reshape(-1, 3)
     colors = colors.reshape(-1, 3)
@@ -156,10 +161,5 @@ def point_cloud(disparity_image, image_left, focal_length):
     points = cv2.reprojectImageTo3D(disparity_image, projection_matrix)
     colors = cv2.cvtColor(image_left, cv2.COLOR_BGR2RGB)
 
-    # Create mask
-    mask = disparity_image > disparity_image.min()
-    out_points = points[mask]
-    out_colors = colors[mask]
-
     # Make a .ply string
-    return make_ply(out_points, out_colors)
+    return make_ply(points, colors)
