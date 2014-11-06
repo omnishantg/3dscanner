@@ -4,7 +4,6 @@ In this project, you'll extract dense 3D information from stereo image pairs.
 """
 
 import cv2
-import math
 import numpy as np
 
 
@@ -28,7 +27,7 @@ def rectify_pair(image_left, image_right, viz=False):
     # FLANN parameters
     FLANN_INDEX_KDTREE = 0
     NUM_TREES = 5
-    NUM_CHECKS = 100
+    NUM_CHECKS = 50
 
     # Find matches between keypoints using FLANN
     index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=NUM_TREES)
@@ -55,6 +54,7 @@ def rectify_pair(image_left, image_right, viz=False):
     mp1 = left_pts[status].reshape(1, -1, 2)
     mp2 = right_pts[status].reshape(1, -1, 2)
 
+    # Calculate rectifying homographies for left and right images
     _, H_left, H_right = cv2.stereoRectifyUncalibrated(mp1,
                                                        mp2,
                                                        F,
@@ -74,21 +74,38 @@ def disparity_map(image_left, image_right):
         with respect to image_left's input pixels.
     """
 
-    stereo = cv2.StereoBM()
-
     # Convert both images to 8-bit images
     image_left = cv2.cvtColor(image_left, cv2.COLOR_BGR2GRAY)
     image_right = cv2.cvtColor(image_right, cv2.COLOR_BGR2GRAY)
 
+    window_size = 1
+    stereo = cv2.StereoSGBM(
+            minDisparity=15,
+            numDisparities=112,
+            SADWindowSize=window_size,
+            uniquenessRatio=7,
+            speckleWindowSize=50,
+            speckleRange=1,
+            disp12MaxDiff=100,
+            fullDP=True,
+            P1=8 * 3 * window_size ** 2,
+            P2=32 * 3 * window_size ** 2
+    )
+
+    # Blur for better disparity map
+    image_left = cv2.GaussianBlur(image_left, (3, 3), 5)
+    image_right = cv2.GaussianBlur(image_right, (3, 3), 5)
+
     # Calculate disparities and change resulting type to 8-bit
-    despair = stereo.compute(image_left, image_right)
-    despair /= 16
-    despair = despair.astype(np.uint8)
+    disparity = stereo.compute(image_left, image_right)
+    disparity /= 16
+    disparity = disparity.astype(np.uint8)
 
-    return despair
+    return disparity
 
 
-ply_header = '''ply
+def make_ply(verts, colors):
+    ply_header = '''ply
 format ascii 1.0
 element vertex %(vert_num)d
 property float x
@@ -100,22 +117,24 @@ property uchar blue
 end_header
 '''
 
-
-def make_ply(verts, colors):
+    # Reshape matrix
     verts = verts.reshape(-1, 3)
     colors = colors.reshape(-1, 3)
     verts = np.hstack([verts, colors])
 
-    output = ply_header % dict(vert_num=len(verts))
+    # Add size of verts to the ply header
+    ply = ply_header % dict(vert_num=len(verts))
 
+    # Loop over image and print out elements in .ply format
     for vector in verts:
         v_list = vector.tolist()
-        output += " ".join(map(str, v_list[:3]))
-        output += " "
-        output += " ".join(map(str, map(int, v_list[3:])))
-        output += "\n"
 
-    return output
+        ply += " ".join(map(str, v_list[:3]))
+        ply += " "
+        ply += " ".join(map(str, map(int, v_list[3:])))
+        ply += "\n"
+
+    return ply
 
 
 def point_cloud(disparity_image, image_left, focal_length):
@@ -132,19 +151,15 @@ def point_cloud(disparity_image, image_left, focal_length):
         disparity pixels or noise pixels if you choose.
     """
 
+    # Setup projection matrix
     projection_matrix = np.matrix([[1, 0, 0, image_left.shape[1] * 0.5],
                                    [0, 1, 0, image_left.shape[0] * 0.5],
                                    [0, 0, focal_length, 0],
                                    [0, 0, 0, 1]])
 
-    min_disp = 16
-    num_disp = 112 - min_disp
-
+    # Reproject image to 3D
     points = cv2.reprojectImageTo3D(disparity_image, projection_matrix)
     colors = cv2.cvtColor(image_left, cv2.COLOR_BGR2RGB)
-    mask = disparity_image > disparity_image.min()
-    out_points = points[mask]
-    out_colors = colors[mask]
 
-    ply = make_ply(out_points, out_colors)
-    return ply
+    # Make a .ply string
+    return make_ply(points, colors)
